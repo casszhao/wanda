@@ -10,7 +10,7 @@ from lib.eval import eval_ppl
 
 print('torch', version('torch'))
 print('transformers', version('transformers'))
-print('accelerate', version('accelerate'))
+#print('accelerate', version('accelerate'))
 print('# of gpus: ', torch.cuda.device_count())
 
 def get_llm(model_name, cache_dir="llm_weights"):

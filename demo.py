@@ -61,8 +61,9 @@ def testing_output(model_name, input):
     print(' ')
 
 print(' ////////////////////////// ')
-full_input = prompt + text1 
+full_input = prompt + text2
 testing_output('decapoda-research/llama-7b-hf', full_input)
-testing_output('pruned_model/llama-7b-hf/magnitude/', full_input)
+
 testing_output('pruned_model/llama-7b-hf/sparsegpt', full_input)
+testing_output('pruned_model/llama-7b-hf/magnitude/', full_input)
 testing_output('pruned_model/llama-7b-hf/wanda/', full_input)

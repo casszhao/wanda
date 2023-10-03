@@ -32,7 +32,7 @@ def main():
     parser.add_argument('--nsamples', type=int, default=128, help='Number of calibration samples.')
     parser.add_argument('--sparsity_ratio', type=float, default=0.5, help='Sparsity level')
     parser.add_argument("--sparsity_type", type=str, default="unstructured", choices=["unstructured", "4:8", "2:4"])
-    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "ablate_magnitude", "ablate_wanda"])
+    parser.add_argument("--prune_method", type=str, default="wanda", choices=["magnitude", "wanda", "sparsegpt", "ablate_magnitude", "ablate_wanda"])
     parser.add_argument("--cache_dir", default="llm_weights", type=str )
     parser.add_argument('--use_variant', action="store_true", help="whether to use the wanda variant described in the appendix")
     parser.add_argument('--save', type=str, default="results", help='Path to save results.')
@@ -97,8 +97,8 @@ def main():
     model_save_path=f"pruned_model/{model_name}/{args.prune_method}"
     os.makedirs(model_save_path)
     
-    model.save_pretrained(args.save_model)
-    tokenizer.save_pretrained(args.save_model)
+    model.save_pretrained(model_save_path)
+    tokenizer.save_pretrained(model_save_path)
 
 if __name__ == '__main__':
     main()

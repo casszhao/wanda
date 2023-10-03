@@ -7,3 +7,4 @@ llm_weights/*
 results/*
 */saved_models/*
 */pruned_models/*
+*.bin

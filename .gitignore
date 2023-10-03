@@ -3,5 +3,6 @@
 *.pyc
 *.DS_Store
 llm_weights/*
-
+*/llm_weights/*
 results/*
+*/saved_models/*

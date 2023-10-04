@@ -72,8 +72,8 @@ def main():
         device = model.hf_device_map["lm_head"]
     print("use device ", device)
 
-    ppl_train, ppl_test = eval_ppl(model, tokenizer, device)
-    print(f"===> original model ----> ppl on wikitext_train {ppl_train}, wikitext_test {ppl_test}")
+    # ppl_train, ppl_test = eval_ppl(model, tokenizer, device)
+    # print(f"===> original model ----> ppl on wikitext_train {ppl_train}, wikitext_test {ppl_test}")
 
     if args.sparsity_ratio != 0:
         print("pruning starts")

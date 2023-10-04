@@ -1,5 +1,6 @@
 import torch
 import torch.nn as nn
+from transformers.pytorch_utils import Conv1D
 
 # Define WrappedGPT class
 class WrappedGPT:
@@ -10,8 +11,13 @@ class WrappedGPT:
     def __init__(self, layer, layer_id=0, layer_name="none"):
         self.layer = layer
         self.dev = self.layer.weight.device
-        self.rows = layer.weight.data.shape[0]
-        self.columns = layer.weight.data.shape[1]
+        # by cass
+        if isinstance(self.layer, Conv1D):
+            self.rows = layer.weight.data.shape[1]
+            self.columns = layer.weight.data.shape[0]
+        else:
+            self.rows = layer.weight.data.shape[0]
+            self.columns = layer.weight.data.shape[1]
 
         self.scaler_row = torch.zeros((self.columns), device=self.dev)
         self.nsamples = 0
@@ -23,7 +29,8 @@ class WrappedGPT:
         if len(inp.shape) == 2:
             inp = inp.unsqueeze(0)
         tmp = inp.shape[0]
-        if isinstance(self.layer, nn.Linear):
+
+        if isinstance(self.layer, nn.Linear) or isinstance(self.layer, Conv1D):
             if len(inp.shape) == 3:
                 inp = inp.reshape((-1, inp.shape[-1]))
             inp = inp.t()
@@ -32,4 +39,7 @@ class WrappedGPT:
         self.nsamples += tmp
 
         inp = inp.type(torch.float32)
-        self.scaler_row += torch.norm(inp, p=2, dim=1) ** 2  / self.nsamples
+
+        
+
+        self.scaler_row += torch.norm(inp.squeeze(0), p=2, dim=1) ** 2  / self.nsamples

@@ -5,10 +5,11 @@ import torch.nn as nn
 from .sparsegpt import SparseGPT
 from .layerwrapper import WrappedGPT
 from .data import get_loaders
+from transformers.pytorch_utils import Conv1D 
 
 from .ablate import AblateGPT
 
-def find_layers(module, layers=[nn.Linear], name=''):
+def find_layers(module, layers=[nn.Linear, Conv1D], name=''):
     """
     Recursively find the layers of a certain type in a module.
 
@@ -22,6 +23,7 @@ def find_layers(module, layers=[nn.Linear], name=''):
     """
     if type(module) in layers:
         return {name: module}
+    # else: print(f"==>> module: type(module), {module}")
     res = {}
     for name1, child in module.named_children():
         res.update(find_layers(
@@ -34,17 +36,24 @@ def check_sparsity(model):
     model.config.use_cache = False
 
     # layers = model.h
-    layers = [v for k,v in model._modules.items()][0].h
+    # by cass
+    if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
+    else: layers = model.base_model.decoder.layers
+
+
     count = 0
     total_params = 0
     for i in range(len(layers)):
         layer = layers[i]
-        subset = find_layers(layer)
+        subset = find_layers(layer) # find_layers(module, layers=[nn.Linear], name=''):
 
         sub_count = 0
         sub_params = 0
         for name in subset:
+            print("".center(50, "-"))
+            print(name)
             W = subset[name].weight.data
+            
             count += (W==0).sum().item()
             total_params += W.numel()
 
@@ -59,8 +68,10 @@ def check_sparsity(model):
 def prepare_calibration_input(model, dataloader, device):
     use_cache = model.config.use_cache
     model.config.use_cache = False
-    layers = [v for k,v in model._modules.items()][0].h
-    # layers = model.h
+
+    # by cass
+    if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
+    else: layers = model.base_model.decoder.layers
 
     # dev = model.hf_device_map["model.embed_tokens"]
     if "model.embed_tokens" in model.hf_device_map:
@@ -108,7 +119,9 @@ def return_given_alpha(alpha, sort_res, W_metric, tmp_metric, sum_before):
     return W_mask, cur_sparsity
 
 def prune_magnitude(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0, prune_m=0):
-    layers = [v for k,v in model._modules.items()][0].h
+    # by cass
+    if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
+    else: layers = model.base_model.decoder.layers
 
     for i in range(len(layers)):
         layer = layers[i]
@@ -139,7 +152,11 @@ def prune_wanda(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0
     with torch.no_grad():
         inps, outs, attention_mask, position_ids = prepare_calibration_input(model, dataloader, device)
 
-    layers = [v for k,v in model._modules.items()][0].h
+    # by cass
+    if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
+    else: layers = model.base_model.decoder.layers
+
+
     for i in range(len(layers)):
         layer = layers[i]
         subset = find_layers(layer)
@@ -171,7 +188,11 @@ def prune_wanda(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0
 
         for name in subset:
             print(f"pruning layer {i} name {name}")
-            W_metric = torch.abs(subset[name].weight.data) * torch.sqrt(wrapped_layers[name].scaler_row.reshape((1,-1)))
+            if isinstance(subset[name], Conv1D): # by cass
+                 W_metric = torch.abs(subset[name].weight.data.T) * torch.sqrt(wrapped_layers[name].scaler_row.reshape((1,-1)))
+            else:W_metric = torch.abs(subset[name].weight.data) * torch.sqrt(wrapped_layers[name].scaler_row.reshape((1,-1)))
+
+
 
             W_mask = (torch.zeros_like(W_metric) == 1)  ## initialize a mask to be all False
             if prune_n != 0:
@@ -207,7 +228,9 @@ def prune_wanda(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0
                     indices = sort_res[1][:,:int(W_metric.shape[1]*args.sparsity_ratio)]
                     W_mask.scatter_(1, indices, True)
 
-            subset[name].weight.data[W_mask] = 0  ## set weights to zero
+            print(subset[name].weight.data.size(), W_mask.size())
+            if isinstance(subset[name], Conv1D): subset[name].weight.data[W_mask.T] = 0
+            else: subset[name].weight.data[W_mask] = 0  ## set weights to zero
 
         for j in range(args.nsamples):
             with torch.no_grad():
@@ -229,7 +252,10 @@ def prune_sparsegpt(args, model, tokenizer, dev, prune_n=0, prune_m=0):
 
     use_cache = model.config.use_cache
     model.config.use_cache = False
-    layers = [v for k,v in model._modules.items()][0].h
+    
+    # by cass
+    if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
+    else: layers = model.base_model.decoder.layers
 
     if "model.embed_tokens" in model.hf_device_map:
         dev = model.hf_device_map["model.embed_tokens"]
@@ -248,7 +274,9 @@ def prune_sparsegpt(args, model, tokenizer, dev, prune_n=0, prune_m=0):
             inps[cache['i']] = inp
             cache['i'] += 1
             cache['attention_mask'] = kwargs['attention_mask']
-            cache['position_ids'] = kwargs['position_ids']
+
+            try: cache['position_ids'] = kwargs['position_ids']
+            except: cache['position_ids'] = None
             raise ValueError
     layers[0] = Catcher(layers[0])
     for batch in dataloader:

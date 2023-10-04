@@ -58,8 +58,15 @@ def check_sparsity(model):
 def prepare_calibration_input(model, dataloader, device):
     use_cache = model.config.use_cache
     model.config.use_cache = False
-    layers = model.model.layers
-
+    try:
+        layers = model.model.layers
+    except:
+        #layers = model.h # by cass, for using gpt2
+    # in llama it is defined as ( in class LlamaModel(LlamaPreTrainedModel) )
+    # self.
+        from transformers import GPT2Config, GPT2Block
+        import torch.nn as nn
+        layers = nn.ModuleList([GPT2Block(GPT2Config, layer_idx=i) for i in range(12)])
     # dev = model.hf_device_map["model.embed_tokens"]
     if "model.embed_tokens" in model.hf_device_map:
         device = model.hf_device_map["model.embed_tokens"]

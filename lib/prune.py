@@ -38,6 +38,7 @@ def check_sparsity(model):
     # layers = model.h
     # by cass
     if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
+    elif 'llama' in str(model.config):layers = model.model.layers
     else: layers = model.base_model.decoder.layers
 
 
@@ -71,6 +72,7 @@ def prepare_calibration_input(model, dataloader, device):
 
     # by cass
     if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
+    elif 'llama' in str(model.config):layers = model.model.layers
     else: layers = model.base_model.decoder.layers
 
     # dev = model.hf_device_map["model.embed_tokens"]
@@ -121,6 +123,7 @@ def return_given_alpha(alpha, sort_res, W_metric, tmp_metric, sum_before):
 def prune_magnitude(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0, prune_m=0):
     # by cass
     if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
+    elif 'llama' in str(model.config):layers = model.model.layers
     else: layers = model.base_model.decoder.layers
 
     for i in range(len(layers)):
@@ -154,6 +157,7 @@ def prune_wanda(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0
 
     # by cass
     if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
+    elif 'llama' in str(model.config):layers = model.model.layers
     else: layers = model.base_model.decoder.layers
 
 
@@ -255,7 +259,9 @@ def prune_sparsegpt(args, model, tokenizer, dev, prune_n=0, prune_m=0):
     
     # by cass
     if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
+    elif 'llama' in str(model.config):layers = model.model.layers
     else: layers = model.base_model.decoder.layers
+        
 
     if "model.embed_tokens" in model.hf_device_map:
         dev = model.hf_device_map["model.embed_tokens"]

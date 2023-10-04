@@ -16,3 +16,4 @@ python main.py  --model $HUGGINGFACE_MODEL_HANDLE \
                 --sparsity_type $SPARSITY_TYPE \
                 --save $SAVE_PATH
 
+# sample python -m pdb main.py --model gpt2 --prune_method wanda --sparsity_type 2:4 --device cpu

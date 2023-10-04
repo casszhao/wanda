@@ -8,6 +8,7 @@ results/*
 */saved_models/*
 */pruned_models/*
 *.bin
+pruned_models/*
 pruned_model/gpt2-medium/magnitude/config.json
 pruned_model/gpt2-medium/magnitude/generation_config.json
 pruned_model/gpt2-medium/magnitude/merges.txt

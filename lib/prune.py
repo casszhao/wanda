@@ -51,8 +51,6 @@ def check_sparsity(model):
         sub_count = 0
         sub_params = 0
         for name in subset:
-            print("".center(50, "-"))
-            print(name)
             W = subset[name].weight.data
             
             count += (W==0).sum().item()

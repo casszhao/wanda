@@ -42,7 +42,7 @@ def main():
     parser.add_argument('--use_variant', action="store_true", help="whether to use the wanda variant described in the appendix")
     parser.add_argument('--save', type=str, default="results", help='Path to save results.')
     parser.add_argument('--save_model', type=str, default="saved_model", help='Path to save the pruned model.')
-    parser.add_argument('--device', type=str, default="cpu", help='device for experiments')
+    parser.add_argument('--device', type=str, default="cuda", help='device for experiments')
 
     args = parser.parse_args()
 
@@ -68,9 +68,10 @@ def main():
     tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=False, cache_dir = args.cache_dir)
 
     device = torch.device(args.device)
-    if "30b" in args.model or "65b" in args.model: # for 30b and 65b we use device_map to load onto multiple A6000 GPUs, thus the processing here.
-        device = model.hf_device_map["lm_head"]
-    print("use device ", device)
+    print('   model.hf_device_map ===>', model.hf_device_map)
+    # if "30b" in args.model or "65b" in args.model: # for 30b and 65b we use device_map to load onto multiple A6000 GPUs, thus the processing here.
+    #     device = model.hf_device_map["lm_head"]
+    # print("use device ", device)
 
     # ppl_train, ppl_test = eval_ppl(model, tokenizer, device)
     # print(f"===> original model ----> ppl on wikitext_train {ppl_train}, wikitext_test {ppl_test}")
@@ -109,7 +110,7 @@ def main():
             print(f"{args.prune_method}\t{sparsity_ratio:.4f}\t{ppl_test:.4f}", file=f, flush=True)
 
     model_save_path=f"pruned_model/{model_name}/{args.prune_method}"
-    os.makedirs(model_save_path)
+    os.makedirs(model_save_path, exist_ok=True)
 
     model.save_pretrained(model_save_path)
     tokenizer.save_pretrained(model_save_path)

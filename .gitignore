@@ -9,6 +9,7 @@ results/*
 */pruned_models/*
 *.bin
 pruned_models/*
+joboutput/*
 pruned_model/gpt2-medium/magnitude/config.json
 pruned_model/gpt2-medium/magnitude/generation_config.json
 pruned_model/gpt2-medium/magnitude/merges.txt
@@ -39,3 +40,5 @@ pruned_model/opt-125m/wanda/merges.txt
 pruned_model/opt-125m/wanda/special_tokens_map.json
 pruned_model/opt-125m/wanda/tokenizer_config.json
 pruned_model/opt-125m/wanda/vocab.json
+joboutput/pru-gpt2_4294967294.out
+.gitignore

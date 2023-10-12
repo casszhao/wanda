@@ -7,6 +7,8 @@ llm_weights/*
 results/*
 */saved_models/*
 */pruned_models/*
+/pruned_models/*
+pruned_models/*
 *.bin
 pruned_models/*
 joboutput/*

@@ -21,9 +21,13 @@ def find_layers(module, layers=[nn.Linear, Conv1D], name=''):
     Returns:
         dict: Dictionary of layers of the given type(s) within the module.
     """
-    if type(module) in layers:
+    
+
+    if type(module) in layers:  # only calcuate the linear ones
         return {name: module}
-    # else: print(f"==>> module: type(module), {module}")
+    if "FalconLinear" in str(type(module)):  # only calcuate the linear ones
+        return {name: module}# for falcon for class FalconLinear(nn.Linear):
+    
     res = {}
     for name1, child in module.named_children():
         res.update(find_layers(
@@ -38,7 +42,8 @@ def check_sparsity(model):
     # layers = model.h
     # by cass
     if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
-    elif 'llama' in str(model.config) or 'Llama' in str(model.config): layers = model.model.layers
+    elif 'llama' in str(model.config).lower(): layers = model.model.layers
+    elif 'falcon' in str(model.config).lower(): layers = model.transformer.h
     else: layers = model.base_model.decoder.layers
 
 
@@ -47,11 +52,14 @@ def check_sparsity(model):
     for i in range(len(layers)):
         layer = layers[i]
         subset = find_layers(layer) # find_layers(module, layers=[nn.Linear], name=''):
+        print(f"==>> subset: {subset}")
 
         sub_count = 0
         sub_params = 0
         for name in subset:
+            print(name)
             W = subset[name].weight.data
+            print("***", W.numel())
             
             count += (W==0).sum().item()
             total_params += W.numel()
@@ -59,6 +67,7 @@ def check_sparsity(model):
             sub_count += (W==0).sum().item()
             sub_params += W.numel()
 
+        print(sub_params)
         print(f"layer {i} sparsity {float(sub_count)/sub_params:.6f}")
 
     model.config.use_cache = use_cache
@@ -68,9 +77,12 @@ def prepare_calibration_input(model, dataloader, device):
     use_cache = model.config.use_cache
     model.config.use_cache = False
 
+    print('=====  model.config  =====')
+    print(model.config)
     # by cass
     if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
-    elif 'llama' in str(model.config) or 'Llama' in str(model.config): layers = model.model.layers
+    elif 'llama' in str(model.config).lower(): layers = model.model.layers
+    elif 'falcon' in str(model.config).lower(): layers = model.transformer.h
     else: layers = model.base_model.decoder.layers
 
     # dev = model.hf_device_map["model.embed_tokens"]
@@ -121,7 +133,8 @@ def return_given_alpha(alpha, sort_res, W_metric, tmp_metric, sum_before):
 def prune_magnitude(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0, prune_m=0):
     # by cass
     if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
-    elif 'llama' in str(model.config)  or 'Llama' in str(model.config):layers = model.model.layers
+    elif 'llama' in str(model.config).lower(): layers = model.model.layers
+    elif 'falcon' in str(model.config).lower(): layers = model.transformer.h
     else: layers = model.base_model.decoder.layers
 
     for i in range(len(layers)):
@@ -155,7 +168,8 @@ def prune_wanda(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0
 
     # by cass
     if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
-    elif 'llama' in str(model.config)  or 'Llama' in str(model.config): layers = model.model.layers
+    elif 'llama' in str(model.config).lower(): layers = model.model.layers
+    elif 'falcon' in str(model.config).lower(): layers = model.transformer.h
     else: layers = model.base_model.decoder.layers
 
 
@@ -184,7 +198,10 @@ def prune_wanda(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0
                 try:
                     outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask, position_ids=position_ids)[0]
                 except:
-                    outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask)[0]
+                    if 'falcon' in str(model.config).lower(): 
+                        outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask, alibi=None)[0]
+                    else: 
+                        outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask)[0]
         for h in handles:
             h.remove()
 
@@ -239,7 +256,10 @@ def prune_wanda(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0
                 try:
                     outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask, position_ids=position_ids)[0]
                 except:
-                    outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask)[0]
+                    if 'falcon' in str(model.config).lower(): 
+                        outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask, alibi=None)[0]
+                    else: 
+                        outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask)[0]
         inps, outs = outs, inps
 
     model.config.use_cache = use_cache
@@ -257,7 +277,8 @@ def prune_sparsegpt(args, model, tokenizer, dev, prune_n=0, prune_m=0):
     
     # by cass
     if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
-    elif 'llama' in str(model.config)  or 'Llama' in str(model.config): layers = model.model.layers
+    elif 'llama' in str(model.config).lower(): layers = model.model.layers
+    elif 'falcon' in str(model.config).lower(): layers = model.transformer.h
     else: layers = model.base_model.decoder.layers
         
 
@@ -323,7 +344,10 @@ def prune_sparsegpt(args, model, tokenizer, dev, prune_n=0, prune_m=0):
             try:
                 outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask, position_ids=position_ids)[0]
             except:
-                outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask)[0]
+                if 'falcon' in str(model.config).lower(): 
+                    outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask, alibi=None)[0]
+                else: 
+                    outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask)[0]
         for h in handles:
             h.remove()
 
@@ -338,7 +362,10 @@ def prune_sparsegpt(args, model, tokenizer, dev, prune_n=0, prune_m=0):
             try:
                 outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask, position_ids=position_ids)[0]
             except:
-                outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask)[0]
+                if 'falcon' in str(model.config).lower(): 
+                    outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask, alibi=None)[0]
+                else: 
+                    outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask)[0]
 
         layers[i] = layer
         torch.cuda.empty_cache()
@@ -420,7 +447,10 @@ def prune_ablate(args, model, tokenizer, dev, prune_n=0, prune_m=0):
             try:
                 outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask, position_ids=position_ids)[0]
             except:
-                outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask)[0]
+                if 'falcon' in str(model.config).lower(): 
+                    outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask, alibi=None)[0]
+                else: 
+                    outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask)[0]
         for h in handles:
             h.remove()
 
@@ -440,7 +470,10 @@ def prune_ablate(args, model, tokenizer, dev, prune_n=0, prune_m=0):
             try:
                 outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask, position_ids=position_ids)[0]
             except:
-                outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask)[0]
+                if 'falcon' in str(model.config).lower(): 
+                    outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask, alibi=None)[0]
+                else: 
+                    outs[j] = layer(inps[j].unsqueeze(0), attention_mask=attention_mask)[0]
 
         layers[i] = layer
         torch.cuda.empty_cache()

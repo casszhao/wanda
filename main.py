@@ -24,15 +24,19 @@ def get_llm(model_name, cache_dir="llm_weights", device: str = 'auto'):
         torch_dtype=torch_dtype,
         cache_dir=cache_dir,
         low_cpu_mem_usage=True,
-        device_map=device
+        device_map=device,
+        trust_remote_code=True
     )
 
-    model.seqlen = model.config.max_position_embeddings
+    try: model.seqlen = model.config.max_position_embeddings
+    except: model.seqlen = 2048 # for falcon-7b-instruct
     return model
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', default="decapoda-research/llama-7b-hf", type=str, help='LLaMA model')
+    parser.add_argument('--model', default="tiiuae/falcon-7b-instruct", type=str, help='LLaMA model', 
+                        choices=["decapoda-research/llama-7b-hf", "tiiuae/falcon-7b-instruct", "gpt2-medium"
+                                 ])
     parser.add_argument('--seed', type=int, default=0, help='Seed for sampling the calibration data.')
     parser.add_argument('--nsamples', type=int, default=128, help='Number of calibration samples.')
     parser.add_argument('--sparsity_ratio', type=float, default=0.5, help='Sparsity level')

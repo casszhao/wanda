@@ -16,8 +16,8 @@ source activate seq
 
 
 # Set common variables
-model="gpt2-medium"  # "decapoda-research/llama-7b-hf"
-model_short_name="gpt2_medium" # "llama_7b"         
+model="gpt2-xl"  # "decapoda-research/llama-7b-hf"
+model_short_name="gpt2_xl" # "llama_7b"         
 sparsity_ratio=0.5
 cuda_device=0
 

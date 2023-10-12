@@ -43,4 +43,4 @@ pruned_model/opt-125m/wanda/special_tokens_map.json
 pruned_model/opt-125m/wanda/tokenizer_config.json
 pruned_model/opt-125m/wanda/vocab.json
 joboutput/pru-gpt2_4294967294.out
-.gitignore
+

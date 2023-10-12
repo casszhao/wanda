@@ -1,0 +1,7 @@
+dev:
+  device: cpu
+  cache_dir: "original_models/"
+  save_path: "results/"
+  pruned_model_paht: "pruned_models/"
+prod:
+  pass: pass

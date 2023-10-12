@@ -1,0 +1,8 @@
+# ignore models
+original_models/
+pruned_models/
+calibration_data/
+
+# Ignore dynaconf secret files
+.secrets.*
+

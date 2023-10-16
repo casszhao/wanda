@@ -43,16 +43,15 @@ def demo_print(example):
 
     output_text = testing_output("tiiuae/falcon-7b-instruct", full_input)
     print(f" FULL MODEL OUTPUT: {output_text}")
-    print(' ')
     print(rouge.get_scores(output_text, example['response'], avg=True)['rouge-l']['f'])
 
 
     model_index_name = "falcon-7b-instruct"
 
-    output_text1 = testing_output(f'pruned_model/{model_index_name}/sparsegpt', full_input)
-    print(f"==>> sparsegpt: {output_text1}")
-    print(' ')
-    print(rouge.get_scores(output_text1, example['response'], avg=True)['rouge-l']['f'])
+    # output_text1 = testing_output(f'pruned_model/{model_index_name}/sparsegpt', full_input)
+    # print(f"==>> sparsegpt: {output_text1}")
+    # print(' ')
+    # print(rouge.get_scores(output_text1, example['response'], avg=True)['rouge-l']['f'])
 
     output_text2 = testing_output(f'pruned_model/{model_index_name}/magnitude/', full_input)
     print(f"==>> magnitude: {output_text2}")
@@ -74,4 +73,7 @@ example = dataset['train'][2]
 demo_print(example)
 
 example = dataset['train'][3]
+demo_print(example)
+
+example = dataset['train'][4]
 demo_print(example)

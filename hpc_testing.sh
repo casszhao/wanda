@@ -4,9 +4,9 @@
 #SBATCH --partition=gpu
 #SBATCH --qos=gpu
 #SBATCH --gres=gpu:1
-#SBATCH --mem=82G
+#SBATCH --mem=96G
 #SBATCH --time=1-00:00:00
-#SBATCH --output=joboutput/%x_%a.out
+
 
 #SBATCH --job-name=pru-gpt2
 

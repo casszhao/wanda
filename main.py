@@ -14,6 +14,7 @@ print('transformers', version('transformers'))
 print('# of gpus: ', torch.cuda.device_count())
 
 def get_llm(model_name, cache_dir="llm_weights", device: str = 'auto'):
+    # by cass
     assert device in ['auto', 'cuda', 'cpu', 'mps']
     if device == 'cpu':
         torch_dtype=torch.float32
@@ -34,20 +35,25 @@ def get_llm(model_name, cache_dir="llm_weights", device: str = 'auto'):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', default="tiiuae/falcon-7b-instruct", type=str, help='LLaMA model', 
-                        choices=["decapoda-research/llama-7b-hf", "tiiuae/falcon-7b-instruct", "gpt2-medium"
+    parser.add_argument('--model', default="tiiuae/falcon-40b-instruct", type=str, help='LLaMA model', 
+                        choices=["decapoda-research/llama-7b-hf", 
+                                 
+                                 "tiiuae/falcon-7b-instruct", 
+                                 "tiiuae/falcon-40b-instruct",
+
                                  "facebook/opt-iml-1.3b",
+                                 "facebook/opt-iml-30b"
                                  ])
     parser.add_argument('--seed', type=int, default=0, help='Seed for sampling the calibration data.')
     parser.add_argument('--nsamples', type=int, default=128, help='Number of calibration samples.')
     parser.add_argument('--sparsity_ratio', type=float, default=0.5, help='Sparsity level')
     parser.add_argument("--sparsity_type", type=str, default="unstructured", choices=["unstructured", "4:8", "2:4"])
-    parser.add_argument("--prune_method", type=str, default="magnitude", choices=["magnitude", "wanda", "sparsegpt", "ablate_magnitude", "ablate_wanda"])
+    parser.add_argument("--prune_method", type=str, default="wanda", choices=["magnitude", "wanda", "sparsegpt", "ablate_magnitude", "ablate_wanda"])
     parser.add_argument("--cache_dir", default="llm_weights", type=str )
     parser.add_argument('--use_variant', action="store_true", help="whether to use the wanda variant described in the appendix")
     parser.add_argument('--save', type=str, default="results", help='Path to save results.')
     parser.add_argument('--save_model', type=str, default="saved_model", help='Path to save the pruned model.')
-    parser.add_argument('--device', type=str, default="cuda", help='device for experiments')
+    parser.add_argument('--device', type=str, default="auto", help='device for experiments')
 
     args = parser.parse_args()
 
@@ -65,7 +71,7 @@ def main():
     print(f"loading llm model {args.model}")
 
     if torch.cuda.device_count() > 0:
-        assert args.device == 'cuda', ("You have a gpu why not use it??")
+        assert args.device == 'auto', ("You have a gpu why not use it??")
         model = get_llm(args.model, args.cache_dir, device='auto')
     else:
         model = get_llm(args.model, args.cache_dir, device=args.device)
@@ -74,9 +80,9 @@ def main():
 
     device = torch.device(args.device)
     print('   model.hf_device_map ===>', model.hf_device_map)
-    # if "30b" in args.model or "65b" in args.model: # for 30b and 65b we use device_map to load onto multiple A6000 GPUs, thus the processing here.
-    #     device = model.hf_device_map["lm_head"]
-    # print("use device ", device)
+    if "30b" in args.model or "40b" in args.model:            # for 30b and 65b we use device_map to load onto multiple A6000 GPUs, thus the processing here.
+        device = model.hf_device_map["lm_head"]
+    print("use device ", device)
 
     ppl_train, ppl_test = eval_ppl(model, tokenizer, device)
     print(f"===> original model ----> ppl on wikitext_train {ppl_train}, wikitext_test {ppl_test}")

@@ -17,3 +17,4 @@ generatec_output/*
 joboutput/pru-gpt2_4294967294.out
 generated_output/pruned_model/*
 
+slurm-*

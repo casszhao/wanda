@@ -14,6 +14,8 @@ def eval_ppl(model, tokenizer, device=torch.device("cuda:0")):
     # Print status
     print(f"evaluating on {dataset}")
 
+    model.eval()
+
     # Get the test loader
     trainloader, testloader = get_loaders(
         dataset, seed=0, seqlen=model.seqlen, tokenizer=tokenizer 

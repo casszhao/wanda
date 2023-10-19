@@ -1,13 +1,14 @@
 #!/bin/bash
-#SBATCH --comment=prune
-#SBATCH --nodes=1
+
 #SBATCH --partition=gpu
 #SBATCH --qos=gpu
-#SBATCH --gres=gpu:2
-#SBATCH --mem=220G
+#SBATCH --nodes=1
 
+#SBATCH --gres=gpu:1
+#SBATCH --mem=88G
+#SBATCH --time=1:00:00
 
-#SBATCH --job-name=pru-falcon
+#SBATCH --job-name=la7b_mag
 
 # Load modules & activate env
 
@@ -21,6 +22,6 @@ source activate seq
 # Set CUDA device visibility
 # export CUDA_VISIBLE_DEVICES=0,1
 
-export CUDA_VISIBLE_DEVICES=0,1
-nvidia-smi
-python main.py --model "facebook/opt-iml-30b" --prune_method "sparsegpt" 
+# export CUDA_VISIBLE_DEVICES=0,1,2,3
+# nvidia-smi
+python main.py --model "NousResearch/Nous-Hermes-llama-2-7b" --prune_method "magnitude" 

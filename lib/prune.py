@@ -130,6 +130,9 @@ def return_given_alpha(alpha, sort_res, W_metric, tmp_metric, sum_before):
     cur_sparsity = (W_mask==True).sum() / W_mask.numel()
     return W_mask, cur_sparsity
 
+
+
+
 def prune_magnitude(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0, prune_m=0):
     # by cass
     if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
@@ -247,7 +250,7 @@ def prune_wanda(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0
                     indices = sort_res[1][:,:int(W_metric.shape[1]*args.sparsity_ratio)]
                     W_mask.scatter_(1, indices, True)
 
-            print(subset[name].weight.data.size(), W_mask.size())
+            #print(subset[name].weight.data.size(), W_mask.size())
             if isinstance(subset[name], Conv1D): subset[name].weight.data[W_mask.T] = 0
             else: subset[name].weight.data[W_mask] = 0  ## set weights to zero
 

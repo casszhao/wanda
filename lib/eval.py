@@ -7,7 +7,7 @@ import torch.nn as nn
 from .data import get_loaders 
 
 # Function to evaluate perplexity (ppl) on a specified model and tokenizer
-def eval_ppl(model, tokenizer, device=torch.device("cuda:0")):
+def eval_ppl(model, tokenizer, if_eval_train_split = False, device=torch.device("cuda:0")):
     # Set dataset
     dataset = "wikitext2"
 
@@ -24,7 +24,8 @@ def eval_ppl(model, tokenizer, device=torch.device("cuda:0")):
     # Evaluate ppl in no grad context to avoid updating the model
     with torch.no_grad():
         ppl_test = eval_ppl_wikitext(model, testloader, 1, device)
-        ppl_train = eval_ppl_wikitext_train(model, trainloader, 1, device)
+        if if_eval_train_split: ppl_train = eval_ppl_wikitext_train(model, trainloader, 1, device)
+        else: ppl_train =  -1
     return ppl_train, ppl_test 
 
 # Function to evaluate perplexity (ppl) specifically on the wikitext dataset
@@ -38,7 +39,7 @@ def eval_ppl_wikitext_train(model, trainloader, bs=1, device=None):
 
     # List to store negative log likelihoods
     nlls = []
-    print(f"nsamples {nsamples}")
+    print(f"eval_ppl_wikitext_train nsamples {nsamples}")
 
     # Loop through each batch
     for i in range(0,nsamples,bs):
@@ -88,7 +89,7 @@ def eval_ppl_wikitext(model, testenc, bs=1, device=None):
 
     # List to store negative log likelihoods
     nlls = []
-    print(f"nsamples {nsamples}")
+    print(f"eval_ppl_wikitext nsamples {nsamples}")
 
     # Loop through each batch
     for i in range(0,nsamples,bs):

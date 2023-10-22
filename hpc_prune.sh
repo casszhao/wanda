@@ -8,7 +8,7 @@
 #SBATCH --mem=88G
 #SBATCH --time=1:00:00
 
-#SBATCH --job-name=la7b_mag
+#SBATCH --job-name=fal7b_wanda
 
 # Load modules & activate env
 
@@ -24,4 +24,4 @@ source activate seq
 
 # export CUDA_VISIBLE_DEVICES=0,1,2,3
 # nvidia-smi
-python main.py --model "NousResearch/Nous-Hermes-llama-2-7b" --prune_method "magnitude" 
+python main.py --model "tiiuae/falcon-40b-instruct" --prune_method "magnitude"

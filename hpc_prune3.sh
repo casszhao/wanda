@@ -18,4 +18,4 @@ source activate seq
 
 # Set CUDA device visibility
 # export CUDA_VISIBLE_DEVICES=0,1
-python main.py --model "tiiuae/falcon-40b-instruct" --prune_method "wanda" 
+python main.py --model "facebook/opt-iml-30b" --prune_method "wanda" 

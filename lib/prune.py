@@ -131,9 +131,35 @@ def return_given_alpha(alpha, sort_res, W_metric, tmp_metric, sum_before):
     return W_mask, cur_sparsity
 
 
-
-
 def prune_magnitude(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0, prune_m=0):
+    # by cass
+    if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
+    elif 'llama' in str(model.config).lower(): layers = model.model.layers
+    elif 'falcon' in str(model.config).lower(): layers = model.transformer.h
+    else: layers = model.base_model.decoder.layers  # opt
+
+    for i in range(len(layers)):
+        layer = layers[i]
+        subset = find_layers(layer)  # only include linear layers
+
+        for name in subset:
+            W = subset[name].weight.data
+
+            W_metric = torch.abs(W)
+            if prune_n != 0:
+                W_mask = (torch.zeros_like(W)==1)
+                for ii in range(W_metric.shape[1]):
+                    if ii % prune_m == 0:
+                        tmp = W_metric[:,ii:(ii+prune_m)].float()
+                        W_mask.scatter_(1,ii+torch.topk(tmp, prune_n,dim=1, largest=False)[1], True)
+            else:
+                thresh = torch.sort(W_metric.flatten().cuda())[0][int(W.numel()*args.sparsity_ratio)].cpu()
+                W_mask = (W_metric<=thresh)
+
+            W[W_mask] = 0
+
+
+def prune_random(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0, prune_m=0):
     # by cass
     if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
     elif 'llama' in str(model.config).lower(): layers = model.model.layers
@@ -146,16 +172,8 @@ def prune_magnitude(args, model, tokenizer, device=torch.device("cuda:0"), prune
 
         for name in subset:
             W = subset[name].weight.data
-            W_metric = torch.abs(W)
-            if prune_n != 0:
-                W_mask = (torch.zeros_like(W)==1)
-                for ii in range(W_metric.shape[1]):
-                    if ii % prune_m == 0:
-                        tmp = W_metric[:,ii:(ii+prune_m)].float()
-                        W_mask.scatter_(1,ii+torch.topk(tmp, prune_n,dim=1, largest=False)[1], True)
-            else:
-                thresh = torch.sort(W_metric.flatten().cuda())[0][int(W.numel()*args.sparsity_ratio)].cpu()
-                W_mask = (W_metric<=thresh)
+            # W_metric = torch.abs(W)
+            W_mask = torch.rand(W.size()) > args.sparsity_ratio
 
             W[W_mask] = 0
 

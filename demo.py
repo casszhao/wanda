@@ -5,6 +5,9 @@ from datasets import load_dataset,load_from_disk
 from rouge import FilesRouge, Rouge
 
 
+
+
+
 files_rouge = FilesRouge()
 rouge = Rouge()
 
@@ -33,7 +36,8 @@ def testing_output(model_name, input):
 
 
 
-def demo_print(example):
+
+def demo_print(model_name, example):
     print(' ')
     print(' ')
     print(' =========================== full iput =========================== ')
@@ -41,39 +45,15 @@ def demo_print(example):
     print(f"{full_input}")
     print(' ')
 
-    output_text = testing_output("tiiuae/falcon-7b-instruct", full_input)
-    print(f" FULL MODEL OUTPUT: {output_text}")
-    print(rouge.get_scores(output_text, example['response'], avg=True)['rouge-l']['f'])
 
+    output_text2 = testing_output(model_name + 'fullmodel/', full_input)
+    print(f"==>> fullmodel: {output_text2}")
 
-    model_index_name = "falcon-7b-instruct"
+    output_text3 = testing_output(model_name + 'random/', full_input)
+    print(f"==>> random: {output_text3}")
+    
+model_name = "pruned_model/opt-iml-1.3b/"
 
-    # output_text1 = testing_output(f'pruned_model/{model_index_name}/sparsegpt', full_input)
-    # print(f"==>> sparsegpt: {output_text1}")
-    # print(' ')
-    # print(rouge.get_scores(output_text1, example['response'], avg=True)['rouge-l']['f'])
-
-    output_text2 = testing_output(f'pruned_model/{model_index_name}/magnitude/', full_input)
-    print(f"==>> magnitude: {output_text2}")
-    print(' ')
-    print(rouge.get_scores(output_text2, example['response'], avg=True)['rouge-l']['f'])
-
-    output_text3 = testing_output(f'pruned_model/{model_index_name}/wanda/', full_input)
-    print(f"==>> wanda: {output_text3}")
-    print(' ')
-    print(rouge.get_scores(output_text3, example['response'], avg=True)['rouge-l']['f'])
-
-
-
-dataset = load_from_disk("data/dolly/") # features = ['instruction', 'context', 'response', 'category']
-example = dataset['train'][1]
-demo_print(example)
-
-example = dataset['train'][2]
-demo_print(example)
-
-example = dataset['train'][3]
-demo_print(example)
-
-example = dataset['train'][4]
-demo_print(example)
+demo_print(model_name, ''' \n 'instruction': 'please summarise this text', 
+                        'context': "looking after elderly parents can be difficult at the best of times .\nbut this man takes caring for his alzheimer 's - suffering mother to another level .\na security guard from china has touched hearts across the country because he takes his 84-year-old mother with him to work on the back of his motorbike every single day , reported the people 's daily online .\nlu xincai , who lives in zhejiang province in eastern china , says that he is scared his mother will get lost if he leaves her at home by herself because she suffers from the degenerative disease .\ndevoted : lu xincai takes his 84-year-old mother to work with him on the back of his motorbike every day .\nhe ties a sash around both of their waists to make sure she does n't fall off\nshe would often go up to the mountains to collect firewood and there were a few occasions when she got lost after dark .\nwhen mr lu 's father passed away earlier this year , he decided to take his mother with him to work because there was no one else who could look after her .\nhis wife works in a different city and his son is still in school .\nafter helping his mother to get up at 5 am every morning , he puts her on the back seat of his motorbike and ties a sash around both of their waists to ensure that she does not fall off .\nmr lu said that he rides the four kilometres to work slowly to make sure his mother feels safe and so that they can chat along the way .\nthe whole journey takes an hour .\neven when at work he checks up on his mother , who has been given her own room by his employers , a bank , to make sure that she has not wandered off somewhere .\nhe said that his mother devoted her life to caring for her children , and now he feels like he has a duty to care for her in return .\nvulnerable : his elderly mother suffers from alzheimer 's and used to get lost when she was left alone\nhe said : ` i was an apple in my mum 's eye , and now she 's my apple . '\n` our mother carried us on her back to the fields when she went to work on the farm and collect firewood when we were young . '\nhe added : ` only if i see her will i feel relaxed .\notherwise i would be afraid is she had wandered away . '",
+                        the summary is:  \n ''')

@@ -5,7 +5,7 @@ import torch
 from transformers import AutoTokenizer, AutoModelForCausalLM
 from importlib.metadata import version
 
-from lib.prune import prune_wanda, prune_magnitude, prune_sparsegpt, prune_ablate, check_sparsity, find_layers
+from lib.prune import prune_random, prune_wanda, prune_magnitude, prune_sparsegpt, prune_ablate, check_sparsity, find_layers
 from lib.eval import eval_ppl
 
 print('torch', version('torch'))
@@ -38,10 +38,8 @@ def get_llm(model_name, cache_dir="llm_weights", device: str = 'auto'):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', default="tiiuae/falcon-40b-instruct", type=str, help='LLaMA model', 
+    parser.add_argument('--model', default="NousResearch/Nous-Hermes-llama-2-7b", type=str, help='LLaMA model', 
                         choices=["decapoda-research/llama-7b-hf", 
-                                 "decapoda-research/llama-13b-hf",
-                                 "decapoda-research/llama-30b-hf",
 
                                  "tiiuae/falcon-7b-instruct", 
                                  "tiiuae/falcon-40b-instruct",
@@ -56,7 +54,7 @@ def main():
     parser.add_argument('--nsamples', type=int, default=100, help='Number of calibration samples.') # 128
     parser.add_argument('--sparsity_ratio', type=float, default=0.5, help='Sparsity level')
     parser.add_argument("--sparsity_type", type=str, default="unstructured", choices=["unstructured", "4:8", "2:4"])
-    parser.add_argument("--prune_method", type=str, default="sparsegpt", choices=["magnitude", "wanda", "sparsegpt", "ablate_magnitude", "ablate_wanda"])
+    parser.add_argument("--prune_method", type=str, default="random", choices=["random", "magnitude", "wanda", "sparsegpt", "ablate_magnitude", "ablate_wanda"])
     parser.add_argument("--cache_dir", default="llm_weights", type=str )
     parser.add_argument('--use_variant', action="store_true", help="whether to use the wanda variant described in the appendix")
     parser.add_argument('--save', type=str, default="results", help='Path to save results.')
@@ -105,6 +103,8 @@ def main():
             prune_magnitude(args, model, tokenizer, device, prune_n=prune_n, prune_m=prune_m)
         elif args.prune_method == "sparsegpt":
             prune_sparsegpt(args, model, tokenizer, device, prune_n=prune_n, prune_m=prune_m)
+        elif args.prune_method == "random":
+            prune_random(args, model, tokenizer, device, prune_n=prune_n, prune_m=prune_m)
         elif "ablate" in args.prune_method:
             prune_ablate(args, model, tokenizer, device, prune_n=prune_n, prune_m=prune_m)
 

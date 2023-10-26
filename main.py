@@ -38,17 +38,21 @@ def get_llm(model_name, cache_dir="llm_weights", device: str = 'auto'):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', default="NousResearch/Nous-Hermes-llama-2-7b", type=str, help='LLaMA model', 
-                        choices=["decapoda-research/llama-7b-hf", 
+    parser.add_argument('--model', default="meta-llama/Llama-2-7b-chat-hf", type=str, help='LLaMA model', 
+                        choices=[
+                            #   "decapoda-research/llama-7b-hf", 
 
                                  "tiiuae/falcon-7b-instruct", 
                                  "tiiuae/falcon-40b-instruct",
 
-                                 "facebook/opt-iml-1.3b",
-                                 "facebook/opt-iml-30b",
+                                 "meta-llama/Llama-2-7b-chat-hf",
+                                 "meta-llama/Llama-2-13b-chat-hf",
 
-                                 "NousResearch/Nous-Hermes-llama-2-7b",
-                                 "NousResearch/Nous-Hermes-Llama2-13b"
+                                #  "facebook/opt-iml-1.3b",
+                                #  "facebook/opt-iml-30b",
+
+                                #  "NousResearch/Nous-Hermes-llama-2-7b",
+                                #  "NousResearch/Nous-Hermes-Llama2-13b"
                                  ])
     parser.add_argument('--seed', type=int, default=0, help='Seed for sampling the calibration data.')
     parser.add_argument('--nsamples', type=int, default=100, help='Number of calibration samples.') # 128

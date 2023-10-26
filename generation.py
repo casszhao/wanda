@@ -1,20 +1,3 @@
-from rouge import FilesRouge
-
-files_rouge = FilesRouge()
-# scores = files_rouge.get_scores(hyp_path, ref_path)
-# or
-context = "generation_output/pseudo_model/pseudo_context"
-instruction = "generation_output/pseudo_model/pseudo_instruction"
-ref_path  = "./generation_output/pseudo_model/pseudo_output_ref"
-hyp_path  = "./generation_output/pseudo_model/pseudo_output"
-
-scores = files_rouge.get_scores(hyp_path, ref_path, avg=True)
-print(f"==>> scores: {scores}")
-
-
-quit()
-
-
 import torch
 from instruct_pipeline import InstructionTextGenerationPipeline
 from transformers import AutoModelForCausalLM, AutoTokenizer

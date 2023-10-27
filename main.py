@@ -55,7 +55,7 @@ def main():
                                 #  "NousResearch/Nous-Hermes-Llama2-13b"
                                  ])
     parser.add_argument('--seed', type=int, default=0, help='Seed for sampling the calibration data.')
-    parser.add_argument('--nsamples', type=int, default=100, help='Number of calibration samples.') # 128
+    parser.add_argument('--nsamples', type=int, default=128, help='Number of calibration samples.')
     parser.add_argument('--sparsity_ratio', type=float, default=0.5, help='Sparsity level')
     parser.add_argument("--sparsity_type", type=str, default="unstructured", choices=["unstructured", "4:8", "2:4"])
     parser.add_argument("--prune_method", type=str, default="random", choices=["random", "magnitude", "wanda", "sparsegpt", "ablate_magnitude", "ablate_wanda"])

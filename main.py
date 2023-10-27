@@ -25,10 +25,9 @@ def get_llm(model_name, cache_dir="llm_weights", device: str = 'auto'):
     print(f"==>> torch_dtype: {torch_dtype}")
     model = AutoModelForCausalLM.from_pretrained(
         model_name,
-        torch_dtype=torch_dtype,
+        torch_dtype="auto" if torch.cuda.is_available() else None,
         cache_dir=cache_dir,
-        low_cpu_mem_usage=True,
-        device_map=device,
+        device_map="auto",
         trust_remote_code=True
     )
 
@@ -63,7 +62,6 @@ def main():
     parser.add_argument('--use_variant', action="store_true", help="whether to use the wanda variant described in the appendix")
     parser.add_argument('--save', type=str, default="results", help='Path to save results.')
     parser.add_argument('--save_model', type=str, default="saved_model", help='Path to save the pruned model.')
-    parser.add_argument('--device', type=str, default="auto", help='device for experiments')
 
     args = parser.parse_args()
 
@@ -80,11 +78,7 @@ def main():
     model_name = args.model.split("/")[-1]
     print(f"loading llm model {args.model}")
 
-    if torch.cuda.device_count() > 0:
-        print(f"\n \n using {torch.cuda.device_count()} GPUs \n ")
-        model = get_llm(args.model, args.cache_dir, device='auto')
-    else:
-        model = get_llm(args.model, args.cache_dir, device=args.device)
+    model = get_llm(args.model, args.cache_dir)
     model.eval()
     tokenizer = AutoTokenizer.from_pretrained(args.model, use_fast=False, cache_dir = args.cache_dir)
 

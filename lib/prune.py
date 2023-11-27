@@ -6,8 +6,28 @@ from .sparsegpt import SparseGPT
 from .layerwrapper import WrappedGPT
 from .data import get_loaders
 from transformers.pytorch_utils import Conv1D 
+from transformers import ( 
+    FalconModel,
+    GPT2Model,
+    LlamaModel, 
+    MistralModel,
+    OPTModel,
+    PreTrainedModel
+)
 
 from .ablate import AblateGPT
+
+def get_decoder_layers(model: PreTrainedModel) -> torch.nn.ModuleList:
+    base_model = model.base_model
+    if isinstance(base_model, (FalconModel, GPT2Model)):
+        return base_model.h
+    elif isinstance(base_model, (LlamaModel, MistralModel)):
+        return base_model.layers
+    elif isinstance(base_model, OPTModel):
+        return base_model.decoder.layers
+    else:
+        raise NotImplementedError(f"Model {type(model)} not supported.")
+
 
 def find_layers(module, layers=[nn.Linear, Conv1D], name=''):
     """
@@ -39,13 +59,7 @@ def check_sparsity(model):
     use_cache = model.config.use_cache
     model.config.use_cache = False
 
-    # layers = model.h
-    # by cass
-    if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
-    elif 'llama' in str(model.config).lower(): layers = model.model.layers
-    elif 'falcon' in str(model.config).lower(): layers = model.transformer.h
-    else: layers = model.base_model.decoder.layers
-
+    layers = get_decoder_layers(model)
 
     count = 0
     total_params = 0
@@ -79,11 +93,7 @@ def prepare_calibration_input(model, dataloader, device):
 
     print('=====  model.config  =====')
     print(model.config)
-    # by cass
-    if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
-    elif 'llama' in str(model.config).lower(): layers = model.model.layers
-    elif 'falcon' in str(model.config).lower(): layers = model.transformer.h
-    else: layers = model.base_model.decoder.layers
+    layers = get_decoder_layers(model)
 
     # dev = model.hf_device_map["model.embed_tokens"]
     if "model.embed_tokens" in model.hf_device_map:
@@ -132,11 +142,7 @@ def return_given_alpha(alpha, sort_res, W_metric, tmp_metric, sum_before):
 
 
 def prune_magnitude(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0, prune_m=0):
-    # by cass
-    if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
-    elif 'llama' in str(model.config).lower(): layers = model.model.layers
-    elif 'falcon' in str(model.config).lower(): layers = model.transformer.h
-    else: layers = model.base_model.decoder.layers  # opt
+    layers = get_decoder_layers(model)
 
     for i in range(len(layers)):
         layer = layers[i]
@@ -160,11 +166,7 @@ def prune_magnitude(args, model, tokenizer, device=torch.device("cuda:0"), prune
 
 
 def prune_random(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0, prune_m=0):
-    # by cass
-    if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
-    elif 'llama' in str(model.config).lower(): layers = model.model.layers
-    elif 'falcon' in str(model.config).lower(): layers = model.transformer.h
-    else: layers = model.base_model.decoder.layers
+    layers = get_decoder_layers(model)
 
     for i in range(len(layers)):
         layer = layers[i]
@@ -187,12 +189,7 @@ def prune_wanda(args, model, tokenizer, device=torch.device("cuda:0"), prune_n=0
     with torch.no_grad():
         inps, outs, attention_mask, position_ids = prepare_calibration_input(model, dataloader, device)
 
-    # by cass
-    if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
-    elif 'llama' in str(model.config).lower(): layers = model.model.layers
-    elif 'falcon' in str(model.config).lower(): layers = model.transformer.h
-    else: layers = model.base_model.decoder.layers
-
+    layers = get_decoder_layers(model)
 
     for i in range(len(layers)):
         layer = layers[i]
@@ -295,13 +292,8 @@ def prune_sparsegpt(args, model, tokenizer, dev, prune_n=0, prune_m=0):
 
     use_cache = model.config.use_cache
     model.config.use_cache = False
-    
-    # by cass
-    if 'gpt2' in str(model.config): layers = [v for k,v in model._modules.items()][0].h
-    elif 'llama' in str(model.config).lower(): layers = model.model.layers
-    elif 'falcon' in str(model.config).lower(): layers = model.transformer.h
-    else: layers = model.base_model.decoder.layers
-        
+
+    layers = get_decoder_layers(model)        
 
     if "model.embed_tokens" in model.hf_device_map:
         dev = model.hf_device_map["model.embed_tokens"]

@@ -4,11 +4,11 @@
 #SBATCH --qos=gpu
 #SBATCH --nodes=1
 
-#SBATCH --gres=gpu:1
-#SBATCH --mem=88G
-#SBATCH --time=1:00:00
+#SBATCH --gres=gpu:2
+#SBATCH --mem=188G
+#SBATCH --time=12:00:00
 
-#SBATCH --job-name=fal7b_wanda
+#SBATCH --job-name=save_attention
 
 # Load modules & activate env
 
@@ -24,4 +24,12 @@ source activate seq
 
 # export CUDA_VISIBLE_DEVICES=0,1,2,3
 # nvidia-smi
-python main.py --model "tiiuae/falcon-40b-instruct" --prune_method "magnitude"
+
+method="sparsegpt"
+model_handle="meta-llama/Llama-2-7b-chat-hf"
+dataset="factcc"
+
+for promptID in "A" "B" "C"
+do
+python demo.py --prompt_id $promptID --prune_method $method --model $model_handle --data $dataset
+done

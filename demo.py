@@ -11,10 +11,10 @@ import pickle
 import os, argparse, time
 
 parser = argparse.ArgumentParser()
-parser.add_argument('--model', default="meta-llama/Llama-2-7b-chat-hf", type=str, help='LLaMA model', 
+parser.add_argument('--model', default="Llama-2-13b-chat-hf", type=str, help='LLaMA model', 
                         choices=[
-                                 "meta-llama/Llama-2-7b-chat-hf",
-                                 "meta-llama/Llama-2-13b-chat-hf",
+                                 "falcon-7b-instruct",
+                                 "mpt-7b-instruct",
                                  ])
 parser.add_argument('--data', default="summeval", type=str, help='select a summarization dataset', 
                     choices=[ #"cogensumm", "frank", 
@@ -25,7 +25,9 @@ parser.add_argument('--prune_method', default="sparsegpt", type=str, help='if us
 parser.add_argument('--prompt_id', default="C", type=str, 
                     choices=["A", "B", "C"],
                     help='pick a prompt template from prompt list, A or B or None')
+
 parser.add_argument('--test_num', default=1111, type=int)
+#parser.add_argument('--cache_model_dir', default="pruned_model", type=str)
 args = parser.parse_args()
 
 
@@ -33,12 +35,10 @@ current_dir = os.getcwd()
 print("Current working directory:", current_dir)
 
 
-# def get_model_tokenzier(model_name):
-#     model = AutoModelForCausalLM.from_pretrained(model_name, 
-#                                                  cache_dir="llm_weights", 
-#                                                  trust_remote_code=True, device_map="auto") # torch_dtype=torch.float16, low_cpu_mem_usage=True, 
-#     tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False, trust_remote_code=True)
-#     return model, tokenizer
+
+
+f = open(f"data/{args.data}.json")
+dataset = json.load(f)
 
 
 
@@ -71,7 +71,7 @@ def get_full_data_attention(model_name, test_num, prompt_id):
     model = AutoModelForCausalLM.from_pretrained(model_name, 
                                                     cache_dir="llm_weights", 
                                                     trust_remote_code=True, device_map="auto") # torch_dtype=torch.float16, low_cpu_mem_usage=True, 
-    tokenizer = AutoTokenizer.from_pretrained(model_name, use_fast=False, trust_remote_code=True)
+    tokenizer = AutoTokenizer.from_pretrained(model_name, cache_dir="pruned_model", use_fast=False, trust_remote_code=True)
 
     list_of_list = []
     for i, key in enumerate(dataset.keys()):
@@ -92,34 +92,52 @@ def get_full_data_attention(model_name, test_num, prompt_id):
 
 
 
-f = open(f"data/{args.data}.json")
-dataset = json.load(f)
+
+model_family = str(args.model).split("-")[0]  # Llama-2-13b-chat-hf_0.4   falcon-7b-instruct_0.4
 
 
 if "llama" in str(args.model):
     size = str(args.model).split("-")[-3]
-    pruned_model_shortname = f"llama-{size}-hf"
 else:
-    pruned_model_shortname = str(args.model).split("/")[-1]
-print(f"==>> pruned_model_shortname: {pruned_model_shortname}")
+    size = str(args.model).split("-")[-2]   # falcon-7b-instruct_0.4
+model_shortname = f"{model_family}-{size}"  # falcon-7b
 
 
 
 
-full_data_pruned_model_attention = get_full_data_attention(f"./pruned_model/{pruned_model_shortname}/{args.prune_method}/", 
-                                                           args.test_num, args.prompt_id)
-with open(f'./saved_attention/{pruned_model_shortname}/fulldata_{args.data}_prompt{args.prompt_id}_{args.prune_method}.pkl', 'wb') as f:
-    pickle.dump(full_data_pruned_model_attention,f)
-    print(f' saved pruned_model len ({len(full_data_pruned_model_attention)})')
-    
-pruned = np.load(f'./saved_attention/{pruned_model_shortname}/fulldata_{args.data}_prompt{args.prompt_id}_{args.prune_method}.pkl', allow_pickle=True)
-print(f"==>> pruned: {len(pruned)}")
+pkl_file_dir = f'./saved_attention/{args.data}/{model_family}/{args.prune_method}'
+img_file_dir = f'./images/{args.data}/{model_family}/{args.prune_method}'
 
-full_data_full_model_attention = get_full_data_attention(args.model, 
-                                                         args.test_num, args.prompt_id)
-with open(f'./saved_attention/fulldata_{args.data}_prompt{args.prompt_id}_full_model.pkl', 'wb') as f:
-    pickle.dump(full_data_full_model_attention,f)
-    print(' saved full_model')
+if not os.path.exists(pkl_file_dir): os.makedirs(pkl_file_dir)
+if not os.path.exists(img_file_dir): os.makedirs(img_file_dir)
+
+
+# full_data_pruned_model_attention = get_full_data_attention(f"./pruned_model/{args.model}/{args.prune_method}/", 
+#                                                            args.test_num, args.prompt_id)
+
+
+# with open(pkl_file_name, 'wb') as f:
+#     pickle.dump(full_data_pruned_model_attention,f)
+#     print(f' saved pruned_model len ({len(full_data_pruned_model_attention)})')
+
+
+
+if len(str(args.model).split("_")[-1]) > 1:  # for pruned model
+    prune_ratio = str(args.model).split("_")[-1]
+    pruned_model_attention = get_full_data_attention(f"./pruned_model/{args.model}/{args.prune_method}/", 
+                                                        args.test_num, args.prompt_id)
+    with open(pkl_file_dir + f'{args.prompt_id}/{model_shortname}_{prune_ratio}', 'wb') as f:
+        pickle.dump(pruned_model_attention,f)
+
+else:                                       # for full model
+    if os.path.exists(f'./saved_attention/{args.data}/{model_family}/full/prompt{args.prompt_id}.pkl'): pass
+    else:
+        noprune_model_attention = get_full_data_attention(args.model, 
+                                                            args.test_num, args.prompt_id)
+        with open(f'./saved_attention/{args.data}/{model_family}/full/prompt{args.prompt_id}.pkl', 'wb') as f:
+            pickle.dump(noprune_model_attention,f)
+
+
 
 
 
@@ -136,11 +154,11 @@ def get_mean_std(list_of_list):
 
 
 
-index, mean, std = get_mean_std(full_data_pruned_model_attention)
+index, mean, std = get_mean_std(pruned_model_attention)
 plt.plot(index, mean, "red", label=str(args.prune_method).capitalize())
 plt.fill_between(index, mean - std, mean + std, alpha=0.2, color="red")
 
-index, mean, std = get_mean_std(full_data_full_model_attention)
+index, mean, std = get_mean_std(noprune_model_attention)
 plt.plot(index, mean, "grey", label="No Pruning")
 plt.fill_between(index, mean - std, mean + std, alpha=0.2, color="grey")
 
@@ -148,7 +166,7 @@ plt.legend()
 plt.xlabel("Generated new token index")
 plt.ylabel("Attention ratio (sum) to source input")
 plt.title('Attention distribution (attention to source)', fontsize=18)
-plt.savefig(f'./images/{pruned_model_shortname}/{args.prune_method}_{pruned_model_shortname}_Prompt{args.prompt_id}_{args.data}.png')
+plt.savefig(img_file_dir + f'Prompt{args.prompt_id}.png')
 
 
 # model_name = "meta-llama/Llama-2-7b-chat-hf"

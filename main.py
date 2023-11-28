@@ -28,7 +28,6 @@ def get_llm(model_name, cache_dir="llm_weights", device: str = 'auto'):
         torch_dtype="auto" if torch.cuda.is_available() else None,
         cache_dir=cache_dir,
         device_map="auto",
-        trust_remote_code=True
     )
 
     try: model.seqlen = model.config.max_position_embeddings
@@ -37,22 +36,7 @@ def get_llm(model_name, cache_dir="llm_weights", device: str = 'auto'):
 
 def main():
     parser = argparse.ArgumentParser()
-    parser.add_argument('--model', default= "tiiuae/falcon-7b-instruct", type=str, help='LLaMA model', 
-                        choices=[
-                            #   "decapoda-research/llama-7b-hf", 
-
-                                 "tiiuae/falcon-7b-instruct", 
-                                 "tiiuae/falcon-40b-instruct",
-
-                                 "meta-llama/Llama-2-7b-chat-hf",
-                                 "meta-llama/Llama-2-13b-chat-hf",
-
-                                #  "facebook/opt-iml-1.3b",
-                                #  "facebook/opt-iml-30b",
-
-                                #  "NousResearch/Nous-Hermes-llama-2-7b",
-                                #  "NousResearch/Nous-Hermes-Llama2-13b"
-                                 ])
+    parser.add_argument('--model', default="meta-llama/Llama-2-7b-chat-hf", type=str)
     parser.add_argument('--seed', type=int, default=0, help='Seed for sampling the calibration data.')
     parser.add_argument('--nsamples', type=int, default=128, help='Number of calibration samples.') 
     parser.add_argument('--sparsity_ratio', type=float, default=0.5, help='Sparsity level')

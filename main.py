@@ -2,7 +2,7 @@ import argparse
 import os
 import numpy as np
 import torch
-from transformers import AutoTokenizer, AutoModelForCausalLM
+from transformers import AutoTokenizer, AutoModelForCausalLM, PretrainedConfig
 from importlib.metadata import version
 
 from lib.prune import prune_random, prune_wanda, prune_magnitude, prune_sparsegpt, prune_ablate, check_sparsity, find_layers
@@ -12,6 +12,16 @@ print('torch', version('torch'))
 print('transformers', version('transformers'))
 #print('accelerate', version('accelerate'))
 print('# of gpus: ', torch.cuda.device_count())
+
+
+def get_sequence_length(config: PretrainedConfig, default: int = 2048) -> int:
+    if hasattr(config, "sliding_window"):
+        return config.sliding_window
+    elif hasattr(config, "max_position_embeddings"):
+        return config.max_position_embeddings
+    else:
+        return default
+
 
 def get_llm(model_name, cache_dir="llm_weights", device: str = 'auto'):
     # by cass
@@ -29,9 +39,7 @@ def get_llm(model_name, cache_dir="llm_weights", device: str = 'auto'):
         cache_dir=cache_dir,
         device_map="auto",
     )
-
-    try: model.seqlen = model.config.max_position_embeddings
-    except: model.seqlen = 2048 # for falcon-7b-instruct
+    model.seqlen = get_sequence_length(model.config)
     return model
 
 def main():
